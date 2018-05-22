@@ -41,12 +41,35 @@ function removePathProtocolPrefix(path) {
 function Ftp() {}
 
 /**
+ * Set the security level/type for the connection.
+ *
+ * Notice:
+ *  1. This method is only supported for Android.
+ *  2. This method should be called before starting a connection with a server.
+ *
+ * @param {string} ftpsType The ftp security type. Accept these values:
+ *                          "ftp": FTP security level (the default value).
+ *                          "ftps": FTPS (FTP over implicit TLS/SSL) security level.
+ *                          "ftpes": FTPES (FTP over explicit TLS/SSL) security level.
+ * @param {function} successCallback The success callback. If triggered, means success.
+ * @param {function} errorCallback The error callback. If triggered, means init fail.
+ */
+Ftp.prototype.setSecurity = function(ftpsType, successCallback, errorCallback) {
+    exec(successCallback,
+        errorCallback,
+        "Ftp",
+        "setSecurity", [ftpsType]);
+};
+
+/**
  * Connect to one ftp server.
  *
  * Just need to init the connection once. If success, you can do any ftp actions later.
  *
- * @param {string} hostname The ftp server address. The address without protocol prefix, e.g. "192.168.1.1:21", "ftp.xfally.github.io"
- *                          Notice: address port is only supported for Android, if not given, default port 21 will be used.
+ * @param {string} hostname The ftp server address. The address without protocol prefix, e.g. "192.168.1.1:21", "ftp.xfally.github.io".
+ *                          Notice:
+ *                           1. The address port is only supported for Android.
+ *                           2. If the port not given explicitly, the default port 21 (or 990 if FTPS) will be used.
  * @param {string} username The ftp login username. If both `username` and `password` are empty, the default username "anonymous" will be used.
  * @param {string} password The ftp login password. If both `username` and `password` are empty, the default password "anonymous@" will be used.
  * @param {function} successCallback The success callback.

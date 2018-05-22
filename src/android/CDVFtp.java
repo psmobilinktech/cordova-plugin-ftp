@@ -144,6 +144,36 @@ public class CDVFtp extends CordovaPlugin {
         return true;
     }
 
+    private void setSecurity(String ftpsType, CallbackContext callbackContext) {
+        if (ftpsType == null)
+        {
+            callbackContext.error("Expected ftp security type.");
+        }
+        else
+        {
+            int securityType = 0;
+            switch (ftpsType) {
+                case "FTP":
+                    securityType = 0;
+                    break;
+                case "FTPS":
+                    securityType = 1;
+                    break;
+                case "FTPES":
+                    securityType = 2;
+                    break;
+                default:
+                    break;
+            }
+            try {
+                this.client.setSecurity(securityType);
+                callbackContext.success("Set ftp security type OK");
+            } catch (Exception e) {
+                callbackContext.error(e.toString());
+            }
+        }
+    }
+
     private void connect(String hostname, String username, String password, CallbackContext callbackContext) {
         if (hostname == null || hostname.length() <= 0)
         {
