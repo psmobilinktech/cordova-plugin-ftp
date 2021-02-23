@@ -39,6 +39,15 @@ import it.sauronsoftware.ftp4j.FTPClient;
 import it.sauronsoftware.ftp4j.FTPDataTransferListener;
 import it.sauronsoftware.ftp4j.FTPFile;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 public class CDVFtp extends CordovaPlugin {
     public static final String TAG = CDVFtp.class.getSimpleName();
     private String rootPath = "/";
@@ -174,6 +183,47 @@ public class CDVFtp extends CordovaPlugin {
         }
     }
 
+    private SSLSocketFactory acceptAllCertyficate(){
+        TrustManager[] trustManager = new TrustManager[] { new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
+            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+            }
+            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+            }
+        } };
+        SSLContext sslContext = null;
+        try {
+            sslContext = SSLContext.getInstance("TLSv1.2");
+            sslContext.init(null, trustManager, new SecureRandom());
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        }
+
+        return sslContext.getSocketFactory();
+    }
+
+    private int getSecurityType(String ftpsType){
+        int securityType = 0;
+            switch (ftpsType) {
+                case "FTP":
+                    securityType = 0;
+                    break;
+                case "FTPS":
+                    securityType = 1;
+                    break;
+                case "FTPES":
+                    securityType = 2;
+                    break;
+                default:
+                    break;
+            }
+        return securityType;
+    }
+
     private void connect(String hostname, String username, String password, CallbackContext callbackContext) {
         if (hostname == null || hostname.length() <= 0)
         {
@@ -188,13 +238,23 @@ public class CDVFtp extends CordovaPlugin {
             }
 
             try {
+                
+                SSLSocketFactory sslSocketFactory = this.acceptAllCertyficate();
+
                 this.client = new FTPClient();
+                this.client.setSSLSocketFactory(sslSocketFactory);
                 String[] address = hostname.split(":");
                 if (address.length == 2) {
                     String host = address[0];
                     int port = Integer.parseInt(address[1]);
                     this.client.connect(host, port);
-                } else {
+                } if(address.length == 3 ) {
+                    String security = address[0].toUpperCase();
+                    String host = address[1].replace("//","");
+                    int port = Integer.parseInt(address[2]);
+                    this.client.setSecurity(this.getSecurityType(security));
+                    this.client.connect(host, port);
+                }else {
                     this.client.connect(hostname);
                 }
                 this.client.login(username, password);
